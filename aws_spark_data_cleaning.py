@@ -7,10 +7,10 @@ from pyspark.sql.functions import regexp_replace, when, col, unix_timestamp
 def create_spark_session():
     return SparkSession.builder \
         .appName("Divvy Bikes - Data Cleaning Using Spark (From AWS S3 Bucket)") \
-        .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.2.0,com.amazonaws:aws-java-sdk-bundle:1.11.563") \
-        .config("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
-        .config("fs.s3a.metrics.enabled", "false") \
+        .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.481") \
+        .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
         .config("spark.hadoop.fs.s3a.aws.credentials.provider", "com.amazonaws.auth.DefaultAWSCredentialsProviderChain") \
+        .config("spark.hadoop.fs.s3a.endpoint", "s3.amazonaws.com") \
         .config("spark.driver.memory", "16g") \
         .config("spark.executor.memory", "16g") \
         .config("spark.memory.fraction", "0.8") \
