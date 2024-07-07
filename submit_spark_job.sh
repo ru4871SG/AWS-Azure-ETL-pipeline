@@ -1,29 +1,31 @@
 #!/bin/bash
 
-# Define the path to your local spark-submit folder
+# Define the path to the local spark-submit folder
 SPARK_SUBMIT_PATH="/home/ruddy/spark-cluster/spark-env/bin/spark-submit"
 
 # Define the path to the PySpark script
 SCRIPT_PATH="$(dirname "$0")/aws_spark_data_cleaning.py"
 
-# Set the AWS profile to use
-export AWS_PROFILE=default
+# Define the path to the JAR files (I don't upload this to the github repo, you can download them Maven Repository)
+HADOOP_AWS_JAR="$(dirname "$0")/jars/hadoop-aws-3.3.4.jar"
+AWS_JAVA_SDK_JAR="$(dirname "$0")/jars/aws-java-sdk-bundle-1.12.481.jar"
 
-# Loop through all 12 months
-for month in {01..12}
-do
-    echo "Processing month $month"
-    
-    # Submit the PySpark script to your Spark Standalone cluster
-    $SPARK_SUBMIT_PATH \
-    --master spark://localhost:7077 \
-    --packages org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.481 \
-    --conf "spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem" \
-    --conf "spark.hadoop.fs.s3a.aws.credentials.provider=com.amazonaws.auth.DefaultAWSCredentialsProviderChain" \
-    --name "Data Cleaning - Month $month" \
-    $SCRIPT_PATH $month
+# Define the path to the AWS credentials file
+AWS_CREDENTIALS_FILE="/home/ruddy/.aws/credentials"
 
-    echo "Spark job for month $month completed."
-done
+# Submit Spark job
+$SPARK_SUBMIT_PATH \
+--master spark://localhost:7077 \
+--conf spark.driver.memory=8g \
+--conf spark.executor.memory=8g \
+--conf spark.total.executor.cores=4 \
+--conf spark.executor.cores=2 \
+--conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
+--conf spark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider \
+--conf spark.hadoop.fs.s3a.access.key=$(grep aws_access_key_id $AWS_CREDENTIALS_FILE | cut -d= -f2 | tr -d '[:space:]') \
+--conf spark.hadoop.fs.s3a.secret.key=$(grep aws_secret_access_key $AWS_CREDENTIALS_FILE | cut -d= -f2 | tr -d '[:space:]') \
+--jars $HADOOP_AWS_JAR,$AWS_JAVA_SDK_JAR \
+--name "Divvy Bikes Data Cleaning" \
+$SCRIPT_PATH
 
-echo "All months processed successfully for the data cleaning processes."
+echo "Spark Job submitted successfully."

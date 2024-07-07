@@ -1,2 +1,3 @@
 .ipynb_checkpoints
 jars
+aws_dynamodb_test.py
