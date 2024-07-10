@@ -9,8 +9,5 @@ if [ -z "$SPARK_SUBMIT" ]; then
     exit 1
 fi
 
-# Set SPARK_LOCAL_IP
-export SPARK_LOCAL_IP=10.5.50.251
-
-# Run the Python script
+# Run the Python script to check the Spark version
 $SPARK_SUBMIT check_version.py

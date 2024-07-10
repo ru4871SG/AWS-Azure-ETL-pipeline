@@ -1,12 +1,12 @@
-import os
+# Import libraries
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
-from pyspark.sql.functions import regexp_replace, unix_timestamp
+from pyspark.sql.functions import regexp_replace, unix_timestamp, monotonically_increasing_id, lit, concat
 
 # Create a Spark session
 spark = SparkSession.builder \
-    .appName("Divvy Bikes - Data Cleaning Using Spark (From AWS S3 Bucket)") \
+    .appName("Divvy Trip Data ETL from AWS S3 Bucket to DynamoDB") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("ERROR")
@@ -61,34 +61,28 @@ sdf = sdf.filter(
 )
 
 # Remove asterisks and "(Temp)" from station names
-sdf = sdf.withColumn("start_station_name", regexp_replace("start_station_name", "\\*", "")) \
-         .withColumn("start_station_name", regexp_replace("start_station_name", "\\(Temp\\)", "")) \
-         .withColumn("end_station_name", regexp_replace("end_station_name", "\\*", "")) \
-         .withColumn("end_station_name", regexp_replace("end_station_name", "\\(Temp\\)", ""))
+sdf = sdf.withColumn("start_station_name", regexp_replace("start_station_name", "\\s?\\*", "")) \
+        .withColumn("start_station_name", regexp_replace("start_station_name", "\\s?\\(Temp\\)", "")) \
+        .withColumn("end_station_name", regexp_replace("end_station_name", "\\s?\\*", "")) \
+        .withColumn("end_station_name", regexp_replace("end_station_name", "\\s?\\(Temp\\)", ""))
 
-# Show the first 5 rows of the cleaned data
-sdf.show(5)
 
-# Perform some tests to verify the cleaning process
-def test_cleaning():
-    # Test 1: Check if 'chargingstx3' station name is cleaned
-    test1 = sdf.filter(F.col("start_station_id") == "chargingstx3").select("start_station_name").distinct().collect()
-    print("Test 1 result:", test1[0]["start_station_name"] if test1 else "No matching records")
+# Add partition key and sort key to the DataFrame
+# For the sort key, we will use the started_at column, and use the date format "yyyyMMddHHmmss"
+sdf = sdf.withColumn("tripdatapartitionkey", concat(lit("TRIP_"), monotonically_increasing_id())) \
+        .withColumn("tripdatasortkey", F.date_format("started_at", "yyyyMMddHHmmss"))
 
-    # Test 2: Check if '13285' station name is cleaned
-    test2 = sdf.filter(F.col("end_station_id") == "13285").select("end_station_name").distinct().collect()
-    print("Test 2 result:", test2[0]["end_station_name"] if test2 else "No matching records")
+# Write the cleaned data to DynamoDB
+sdf.write \
+    .format("dynamodb") \
+    .option("tableName", "divvy_tripdata_cleaned") \
+    .option("region", "us-east-1") \
+    .option("hashKey", "tripdatapartitionkey") \
+    .option("rangeKey", "tripdatasortkey") \
+    .mode("append") \
+    .save()
 
-    # Test 3: Check if 'DIVVY CASSETTE REPAIR MOBILE STATION' is removed
-    test3 = sdf.filter(F.col("end_station_id") == "DIVVY CASSETTE REPAIR MOBILE STATION").count()
-    print("Test 3 result:", "Removed" if test3 == 0 else "Still present")
-
-    # Test 4: Check if 'DIVVY 001 - Warehouse test station' is removed
-    test4 = sdf.filter(F.col("start_station_id") == "DIVVY 001 - Warehouse test station").count()
-    print("Test 4 result:", "Removed" if test4 == 0 else "Still present")
-
-# Run the tests
-test_cleaning()
+print("Data successfully written to DynamoDB")
 
 # Stop the Spark session
 spark.stop()
