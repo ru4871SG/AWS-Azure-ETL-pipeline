@@ -25,6 +25,8 @@ $SPARK_SUBMIT_PATH \
 --conf spark.executor.memory=8g \
 --conf spark.total.executor.cores=4 \
 --conf spark.executor.cores=2 \
+--conf spark.executor.heartbeatInterval=60s \
+--conf spark.network.timeout=300s \
 --conf spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem \
 --conf spark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider \
 --conf spark.hadoop.fs.s3a.access.key=$AWS_ACCESS_KEY_ID \

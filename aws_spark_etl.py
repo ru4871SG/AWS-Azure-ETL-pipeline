@@ -2,7 +2,11 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
-from pyspark.sql.functions import regexp_replace, unix_timestamp, monotonically_increasing_id, lit, concat
+from pyspark.sql.functions import concat, lit, regexp_replace, unix_timestamp
+from pyspark.sql.window import Window
+
+from botocore.exceptions import ClientError
+from retry import retry
 
 # Create a Spark session
 spark = SparkSession.builder \
@@ -19,10 +23,8 @@ def read_csv_from_s3(file_name):
     s3_path = f"s3a://{bucket_name}/{file_name}"
     return spark.read.csv(s3_path, header=True, inferSchema=True)
 
-# Months to read data from
-months = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
-
 # Read data from S3 for each month and union the dataframes
+months = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
 dataframes = [read_csv_from_s3(f"divvy_tripdata_2022{month}.csv") for month in months]
 sdf = dataframes[0]
 for df in dataframes[1:]:
@@ -66,23 +68,38 @@ sdf = sdf.withColumn("start_station_name", regexp_replace("start_station_name", 
         .withColumn("end_station_name", regexp_replace("end_station_name", "\\s?\\*", "")) \
         .withColumn("end_station_name", regexp_replace("end_station_name", "\\s?\\(Temp\\)", ""))
 
-
-# Add partition key and sort key to the DataFrame
-# For the sort key, we will use the started_at column, and use the date format "yyyyMMddHHmmss"
-sdf = sdf.withColumn("tripdatapartitionkey", concat(lit("TRIP_"), monotonically_increasing_id())) \
+# Add partition key and sort key columns to the DataFrame after sorting it
+# For the sort key, we will use the 'started_at' column, and use the date format "yyyyMMddHHmmss"
+window_spec = Window.orderBy("started_at")
+sdf = sdf.withColumn("row_number", F.row_number().over(window_spec)) \
+        .withColumn("tripdatapartitionkey", concat(lit("TRIP_"), F.format_string("%07d", F.col("row_number")))) \
         .withColumn("tripdatasortkey", F.date_format("started_at", "yyyyMMddHHmmss"))
 
-# Write the cleaned data to DynamoDB
-sdf.write \
-    .format("dynamodb") \
-    .option("tableName", "divvy_tripdata_cleaned") \
-    .option("region", "us-east-1") \
-    .option("hashKey", "tripdatapartitionkey") \
-    .option("rangeKey", "tripdatasortkey") \
-    .mode("append") \
-    .save()
+print("Data transformation done.")
 
-print("Data successfully written to DynamoDB")
+# Function to write batches to DynamoDB
+@retry(exceptions=ClientError, tries=5, delay=2, backoff=2)
+def dynamodb_batch(batch_df):
+    batch_df.write \
+        .format("dynamodb") \
+        .option("tableName", "divvy_tripdata_cleaned") \
+        .option("region", "us-east-1") \
+        .option("hashKey", "tripdatapartitionkey") \
+        .option("rangeKey", "tripdatasortkey") \
+        .mode("append") \
+        .save()
+
+# Batch write operation
+batch_size = 300
+total_rows = sdf.count()
+
+for i in range(1, total_rows + 1, batch_size):
+    end = min(i + batch_size - 1, total_rows)
+    batch_df = sdf.filter((F.col("row_number") >= i) & (F.col("row_number") <= end))
+    dynamodb_batch(batch_df)
+    print(f"Batch {(i - 1) // batch_size + 1} (rows {i} to {end}) written to DynamoDB")
+
+print("All data successfully written to DynamoDB")
 
 # Stop the Spark session
 spark.stop()
