@@ -1,3 +1,4 @@
 .ipynb_checkpoints
 jars
-aws_dynamodb_test.py
+azure_spark_etl.py
+azure_spark_etl_submit_job.sh
