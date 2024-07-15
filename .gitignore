@@ -1,4 +1,6 @@
 .ipynb_checkpoints
+.env
 jars
 azure_spark_etl.py
 azure_spark_etl_submit_job.sh
+errors.txt

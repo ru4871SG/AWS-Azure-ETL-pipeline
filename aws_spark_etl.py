@@ -6,21 +6,44 @@ from pyspark.sql.functions import concat, lit, regexp_replace, unix_timestamp
 from pyspark.sql.window import Window
 
 from botocore.exceptions import ClientError
+from dotenv import load_dotenv
 from retry import retry
+import os
+
+
+# Load environment variables
+load_dotenv()
+
+# AWS configuration
+aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+aws_region = os.getenv("AWS_REGION")
+s3_bucket_name = os.getenv("S3_BUCKET_NAME")
+dynamodb_table_name = os.getenv("DYNAMODB_TABLE_NAME")
 
 # Create a Spark session
 spark = SparkSession.builder \
-    .appName("Divvy Trip Data ETL from AWS S3 Bucket to DynamoDB") \
+    .appName("Divvy Trip Data ETL from S3 to DynamoDB") \
+    .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
+    .config("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \
+    .config("spark.hadoop.fs.s3a.access.key", aws_access_key_id) \
+    .config("spark.hadoop.fs.s3a.secret.key", aws_secret_access_key) \
+    .config("spark.dynamodb.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider") \
+    .config("spark.dynamodb.aws.region", aws_region) \
+    .config("spark.dynamodb.access.key", aws_access_key_id) \
+    .config("spark.dynamodb.secret.key", aws_secret_access_key) \
+    .config("spark.dynamodb.endpoint", f"dynamodb.{aws_region}.amazonaws.com") \
+    .config("spark.executor.extraJavaOptions", f"-Dcom.amazonaws.services.dynamodbv2.enableV2=true -Daws.accessKeyId={aws_access_key_id} -Daws.secretKey={aws_secret_access_key}") \
+    .config("spark.driver.extraJavaOptions", f"-Dcom.amazonaws.services.dynamodbv2.enableV2=true -Daws.accessKeyId={aws_access_key_id} -Daws.secretKey={aws_secret_access_key}") \
+    .config("spark.dynamodb.write.throttle.rate", "5") \
+    .config("spark.dynamodb.read.throttle.rate", "5") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("ERROR")
 
-# S3 bucket name
-bucket_name = "divvydatacsv"
-
-# Function to read CSV from S3
+# Function to read CSV from S3 bucket
 def read_csv_from_s3(file_name):
-    s3_path = f"s3a://{bucket_name}/{file_name}"
+    s3_path = f"s3a://{s3_bucket_name}/{file_name}"
     return spark.read.csv(s3_path, header=True, inferSchema=True)
 
 # Read data from S3 for each month and union the dataframes
@@ -82,8 +105,8 @@ print("Data transformation done.")
 def dynamodb_batch(batch_df):
     batch_df.write \
         .format("dynamodb") \
-        .option("tableName", "divvy_tripdata_cleaned") \
-        .option("region", "us-east-1") \
+        .option("tableName", dynamodb_table_name) \
+        .option("region", aws_region) \
         .option("hashKey", "tripdatapartitionkey") \
         .option("rangeKey", "tripdatasortkey") \
         .mode("append") \
@@ -99,7 +122,7 @@ for i in range(1, total_rows + 1, batch_size):
     dynamodb_batch(batch_df)
     print(f"Batch {(i - 1) // batch_size + 1} (rows {i} to {end}) written to DynamoDB")
 
-print("All data successfully written to DynamoDB")
+print("Data successfully written to DynamoDB")
 
 # Stop the Spark session
 spark.stop()
