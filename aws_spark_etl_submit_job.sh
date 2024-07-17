@@ -11,11 +11,6 @@ HADOOP_AWS_JAR="$(realpath "$(dirname "$0")/jars/hadoop-aws-3.3.4.jar")"
 AWS_JAVA_SDK_JAR="$(realpath "$(dirname "$0")/jars/aws-java-sdk-bundle-1.12.481.jar")"
 AWS_JAVA_SDK_DYNAMODB_JAR="$(realpath "$(dirname "$0")/jars/dynamodb-2.25.1.jar")"
 
-# Print debug information with absolute paths for the JARs
-echo "HADOOP_AWS_JAR path: $HADOOP_AWS_JAR"
-echo "AWS_JAVA_SDK_JAR path: $AWS_JAVA_SDK_JAR"
-echo "AWS_JAVA_SDK_DYNAMODB_JAR path: $AWS_JAVA_SDK_DYNAMODB_JAR"
-
 # Submit Spark job
 $SPARK_SUBMIT_PATH \
 --master spark://localhost:7077 \
@@ -29,5 +24,3 @@ $SPARK_SUBMIT_PATH \
 --packages com.audienceproject:spark-dynamodb_2.12:1.1.1 \
 --name "Divvy Trip Data ETL from S3 to DynamoDB" \
 $SCRIPT_PATH
-
-echo "Spark Job submitted successfully."
