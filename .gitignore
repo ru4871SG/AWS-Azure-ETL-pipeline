@@ -2,5 +2,4 @@
 .env
 jars
 local_data
-aws_logistic_regression_notebook.ipynb
 errors.txt
