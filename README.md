@@ -1,4 +1,4 @@
-# AWS-Azure-ETL-pipeline
+# ETL pipeline with AWS and Azure
 This repository contains PySpark scripts as well as Spark job submission scripts that work with ETL processes in AWS and Azure. The scripts are currently optimized for usage in local Spark standalone cluster using Docker containers. That's why I've also included `docker-compose.yaml`. Feel free to edit the settings in the yaml file for your own cluster.
 
 `aws_spark_etl.py` is the PySpark script that can extract data from AWS S3 Bucket, clean and transform the data with Spark, and then load the transformed data to AWS DynamoDB. You can submit the PySpark script to your Spark Standalone cluster with the included Spark job submission script `aws_spark_etl_submit_job.sh`.
