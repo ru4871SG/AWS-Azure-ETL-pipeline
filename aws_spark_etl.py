@@ -98,7 +98,7 @@ sdf = sdf.withColumn("row_number", F.row_number().over(window_spec)) \
         .withColumn("tripdatapartitionkey", concat(lit("TRIP_"), F.format_string("%07d", F.col("row_number")))) \
         .withColumn("tripdatasortkey", F.date_format("started_at", "yyyyMMddHHmmss"))
 
-print("Data transformation done.")
+print("Data cleaning and transformation done.")
 
 # Function to write batches to DynamoDB
 @retry(exceptions=ClientError, tries=5, delay=2, backoff=2)

@@ -89,7 +89,7 @@ sdf = sdf.withColumn("row_number", F.row_number().over(window_spec)) \
         .withColumn("id", concat(lit("TRIP_"), F.format_string("%07d", F.col("row_number")))) \
         .withColumn("time_details", date_format("started_at", "yyyyMMddHHmmss"))
 
-print("Data transformation done.")
+print("Data cleaning and transformation done.")
 
 # Function to write batches to CosmosDB
 @retry(exceptions=exceptions.CosmosHttpResponseError, tries=5, delay=2, backoff=2)
