@@ -11,9 +11,11 @@ Note: For the jars that I use within the Bash scripts, you can easily find them 
 
 I've also included `check_version.py` and `check-version_submit_job.sh` in case you want to check the version of Spark and Hadoop installed on your machine (make sure the JARs and package versions in the scripts are compatible with your Spark version).
 
-## Jupyter Notebook
+## Jupyter Notebooks
 
-There's also a Jupyter notebook file `aws_spark_etl_notebook_final.ipynb` that explains my data cleaning steps in both `aws_spark_etl.py` and `azure_spark_etl.py`. All the investigations and reasoning behind them are explained here.
+There's also a Jupyter notebook file `aws_spark_notebook.ipynb` that explains my data cleaning and transformation steps in both `aws_spark_etl.py` and `azure_spark_etl.py`. All the investigations and reasoning behind them are explained in the notebook.
+
+Recently, I've also added the Databricks version of the same notebook, you can check it out `aws_databricks_notebook.ipynb`.
 
 ## Data Source
 
