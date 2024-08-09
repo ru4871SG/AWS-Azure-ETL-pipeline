@@ -21,10 +21,6 @@ def main():
     dynamodb_table_name = dbutils.secrets.get(scope="ruddy-scope", key="dynamodb_table_name")
     aws_region = dbutils.secrets.get(scope="ruddy-scope", key="aws_region")
 
-    spark = SparkSession.builder \
-        .appName("Divvy Trip Data ETL using Databricks") \
-        .getOrCreate()
-
     # Read data from Databricks workspace directly
     sdf = spark.table("de_testing_oregon.default.divvy_table_complete")
     # We can drop the '_rescued_data' column (which is automatically added by Databricks), since it's not needed
