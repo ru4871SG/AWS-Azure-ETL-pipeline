@@ -1,5 +1,4 @@
 # Import libraries
-from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StringType
 from pyspark.sql.functions import concat, lit, regexp_replace, unix_timestamp
@@ -11,6 +10,7 @@ from retry import retry
 
 import boto3
 
+# Function to convert string to decimal (since we use boto3 here, we need data type conversion)
 def to_decimal(value):
     return Decimal(str(value)) if value is not None else None
 
@@ -21,7 +21,7 @@ def main():
     dynamodb_table_name = dbutils.secrets.get(scope="ruddy-scope", key="dynamodb_table_name")
     aws_region = dbutils.secrets.get(scope="ruddy-scope", key="aws_region")
 
-    # Read data from Databricks workspace directly
+    # Read data from Databricks workspace directly instead of connecting to S3 bucket every single time
     sdf = spark.table("de_testing_oregon.default.divvy_table_complete")
     # We can drop the '_rescued_data' column (which is automatically added by Databricks), since it's not needed
     sdf = sdf.drop("_rescued_data")
@@ -79,11 +79,11 @@ def main():
 
     print("Data cleaning and transformation done.")
 
-    #Function to write batches to DynamoDB
+    # Function to write batches to DynamoDB
     @retry(exceptions=ClientError, tries=5, delay=2, backoff=2)
     def dynamodb_batch(batch_df):
         try:
-            print(f"Attempting to write {batch_df.count()} rows to DynamoDB")
+            print("Writing to DynamoDB..")
             boto3_session = boto3.Session(
                 aws_access_key_id=aws_access_key_id,
                 aws_secret_access_key=aws_secret_access_key,
