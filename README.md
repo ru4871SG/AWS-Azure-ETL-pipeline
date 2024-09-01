@@ -3,7 +3,7 @@ This repository contains PySpark scripts as well as Spark job submission scripts
 
 `aws_spark_etl.py` is the PySpark script that can extract data from Amazon S3 Bucket, clean and transform the data with Spark, and then load the transformed data to Amazon DynamoDB. You can submit the PySpark script to your Spark Standalone cluster with the included Spark job submission script `aws_spark_etl_submit_job.sh`.
 
-**Update (8 August 2024):** I have updated the repo with a new PySpark script named `aws_databricks_etl.py`, which is similar to `aws_spark_etl.py` but optimized for Databricks job runs. It works quite similarly, but I use secret scopes to handle sensitive details (instead of `.env` file). Another difference is that I use `boto3` library to handle the connection to DynamoDB.
+**Update (8 August 2024):** I have updated the repo with a new PySpark script named `aws_databricks_etl.py`, which is similar to `aws_spark_etl.py` but optimized for Databricks job runs. It works quite similarly, but I use secret scopes to handle sensitive details (instead of `.env` file). Another difference is that I use `boto3` library (AWS SDK for Python) to handle the connection to DynamoDB.
 
 As for Databricks cluster configurations, you can easily run `aws_databricks_etl.py` with m5d.large node type (8 GB Memory, 2 Cores) with unrestricted single node policy.
 
