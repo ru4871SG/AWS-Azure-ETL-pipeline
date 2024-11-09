@@ -83,11 +83,11 @@ sdf = sdf.withColumn("start_station_name", regexp_replace("start_station_name", 
         .withColumn("end_station_name", regexp_replace("end_station_name", "\\s?\\*", "")) \
         .withColumn("end_station_name", regexp_replace("end_station_name", "\\s?\\(Temp\\)", ""))
 
-# Add id, row_number ,and time_details columns
+# Add 'row_number', 'id', and 'started_at_timestamp' columns
 window_spec = Window.orderBy("started_at")
 sdf = sdf.withColumn("row_number", F.row_number().over(window_spec)) \
         .withColumn("id", concat(lit("TRIP_"), F.format_string("%07d", F.col("row_number")))) \
-        .withColumn("time_details", date_format("started_at", "yyyyMMddHHmmss"))
+        .withColumn("started_at_timestamp", date_format("started_at", "yyyyMMddHHmmss"))
 
 print("Data cleaning and transformation done.")
 
@@ -99,9 +99,11 @@ def cosmosdb_batch(batch_df):
         .option("spark.synapse.linkedService", "CosmosDBConnection") \
         .option("spark.cosmos.container", cosmos_container) \
         .option("spark.cosmos.database", cosmos_database) \
+        .option("spark.cosmos.write.partitionKey.path", "/id") \
         .option("upsert", "true") \
         .mode("append") \
         .save()
+
 
 # Batch write operation
 batch_size = 300

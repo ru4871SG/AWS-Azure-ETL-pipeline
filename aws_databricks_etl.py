@@ -62,11 +62,13 @@ def main():
             .withColumn("end_station_name", regexp_replace("end_station_name", "\\s?\\*", "")) \
             .withColumn("end_station_name", regexp_replace("end_station_name", "\\s?\\(Temp\\)", ""))
 
-    # Add partition key and sort key columns to the DataFrame after sorting it
+    # Add partition key and sort key columns to the DataFrame after sorting it. 
+    # 'trip_id' will be the partition key and 'started_at_timestamp' will be the sort key.
+    # For the sort key, we will use the 'started_at' column, and use the date format "yyyyMMddHHmmss"
     window_spec = Window.orderBy("started_at")
     sdf = sdf.withColumn("row_number", F.row_number().over(window_spec)) \
-            .withColumn("tripdatapartitionkey", concat(lit("TRIP_"), F.format_string("%07d", F.col("row_number")))) \
-            .withColumn("tripdatasortkey", F.date_format("started_at", "yyyyMMddHHmmss"))
+            .withColumn("trip_id", concat(lit("TRIP_"), F.format_string("%07d", F.col("row_number")))) \
+            .withColumn("started_at_timestamp", F.date_format("started_at", "yyyyMMddHHmmss"))
 
     # Since we use boto3 here, we need to convert datetime columns to strings before writing to DynamoDB
     sdf = sdf.withColumn("started_at", F.date_format("started_at", "yyyy-MM-dd HH:mm:ss"))
