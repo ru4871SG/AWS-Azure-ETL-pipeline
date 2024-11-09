@@ -5,9 +5,9 @@ This repository contains PySpark scripts as well as Spark job submission scripts
 
 You can submit the PySpark script to your Spark Standalone cluster with the included Spark job submission script [aws_spark_etl_submit_job.sh](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/aws_spark_etl_submit_job.sh).
 
-**Update (8 August 2024):** I have updated the repo with a new PySpark script named [aws_databricks_etl.py](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/aws_databricks_etl.py), which is similar to `aws_spark_etl.py` but optimized for Databricks job runs inside AWS. It works quite similarly, but I use secret scopes to handle sensitive details (instead of using `.env` file). Another difference is that I use `boto3` library (AWS SDK for Python) to handle the connection to DynamoDB.
+**Update (8 August 2024):** I have updated the repo with a new PySpark script named [aws_databricks_etl.py](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/aws_databricks_etl.py), which is similar to [aws_spark_etl.py](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/aws_spark_etl.py) but optimized for Databricks job runs inside AWS. It works quite similarly, but I use secret scopes to handle sensitive details (instead of using `.env` file). Another difference is that I use `boto3` library (AWS SDK for Python) to handle the connection to DynamoDB.
 
-As for Databricks cluster configurations, you can easily run `aws_databricks_etl.py` with `m5d.large` node type (8 GB Memory, 2 Cores) and unrestricted single node policy.
+As for Databricks cluster configurations, you can easily run [aws_databricks_etl.py](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/aws_databricks_etl.py) with `m5d.large` node type (8 GB Memory, 2 Cores) and unrestricted single node policy.
 
 Meanwhile, [azure_spark_etl.py](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/azure_spark_etl.py) is the PySpark script that can extract data from Azure Blob Storage, clean and transform the data with Spark, and then load the transformed data to Azure CosmosDB. Here, we use 'id' instead of 'trip_id', because the property 'id' is required in CosmosDB.
 
@@ -21,7 +21,7 @@ I've also included [check_version.py](https://github.com/ru4871SG/AWS-Azure-ETL-
 
 ## Jupyter Notebooks
 
-There's also a Jupyter notebook file [aws_spark_notebook.ipynb](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/aws_spark_notebook.ipynb) that explains my data cleaning and transformation steps in both `aws_spark_etl.py` and `azure_spark_etl.py`. All the investigations and reasoning behind them are explained in the notebook.
+There's also a Jupyter notebook file [aws_spark_notebook.ipynb](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/aws_spark_notebook.ipynb) that explains my data cleaning and transformation steps in both [aws_spark_etl.py](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/aws_spark_etl.py) and [azure_spark_etl.py](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/azure_spark_etl.py). All the investigations and reasoning behind them are explained in the notebook.
 
 I've also added the Databricks version of the same notebook, you can check it out at [aws_databricks_notebook.ipynb](https://github.com/ru4871SG/AWS-Azure-ETL-pipeline/blob/main/aws_databricks_notebook.ipynb).
 
